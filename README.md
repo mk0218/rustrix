@@ -1,3 +1,5 @@
+Only integer items are available currently.
+
 ## Initialization
 ```Rust
 let mx = mx![

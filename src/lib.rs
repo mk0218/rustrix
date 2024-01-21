@@ -1,9 +1,101 @@
+//! Supportsc macro and basic operations for matrix.
+//! Only integer items are available currently.
+
+//! ## Initialization
+//! ```
+//! use rustrix::*;
+//! 
+//! let mx = mx![
+//!     1, 2, 3;
+//!     4, 5, 6;
+//! ];
+//! ```
+//! ```
+//! use rustrix::*;
+//! 
+//! let (rows, cols, initial_value) = (2, 3, 1);
+//! let mx = mx!(rows, cols; initial_value);
+//! // 1 1 1
+//! // 1 1 1
+//! ```
+
+//! ## Add
+//! ```
+//! use rustrix::*;
+//! 
+//! let m1 = mx!(3, 3; 2);
+//! let m2 = mx!(3, 3; 3);
+//! let mx = m1 + m2;
+//! // 5 5 5
+//! // 5 5 5
+//! // 5 5 5
+//! ```
+
+//! ## Subtract
+//! ```
+//! use rustrix::*;
+//! 
+//! let m1 = mx!(3, 3; 2);
+//! let m2 = mx!(3, 3; 3);
+//! let mx = m1 - m2;
+//! // -1 -1 -1
+//! // -1 -1 -1
+//! // -1 -1 -1
+//! ```
+
+//! ## Dot product
+//! ```
+//! use rustrix::*;
+//! 
+//! let m1 = mx![
+//!     1, 1, 1;
+//!     2, 2, 2;
+//! ];
+//! 
+//! let m2 = mx![
+//!     1, 1, 1, 1;
+//!     2, 2, 2, 2;
+//!     3, 3, 3, 3;
+//! ];
+//! 
+//! let mx = m1 * m2;
+//! 
+//! //  6  6  6  6
+//! // 12 12 12 12
+//! ```
+
+//! ## Transpose
+//! ```
+//! use rustrix::*;
+//! 
+//! let mx = mx![
+//!     1, 2;
+//!     3, 4;
+//!     5, 6;
+//! ];
+//! 
+//! let tp = mx.tp();
+//! // 1 3 5
+//! // 2 4 6
+//! ```
+
 use std::ops;
 
 // TODO: How to ensure the vector is not empty?
 #[derive(Clone, Debug, PartialEq)]
-pub struct Matrix(Vec<Vec<i32>>);
+pub struct Matrix(pub Vec<Vec<i32>>);
 
+/// ```
+/// use rustrix::*;
+/// 
+/// // Both macros build the same results.
+/// let (rows, cols, initial_value) = (2, 3, 1);
+/// let m1 = mx!(rows, cols; initial_value);
+/// let m2 = mx![
+///     1, 1, 1;
+///     1, 1, 1;
+/// ];
+/// ```
 #[macro_export]
 macro_rules! mx {
     ($r: expr, $c: expr $(; $v: expr)?) => {
@@ -41,14 +133,17 @@ macro_rules! mx {
 }
 
 impl Matrix {
+    /// Returns the number of rows in the matrix.
     pub fn rows(&self) -> usize {
         self.0.len()
     }
 
+    /// Returns the number of columns in the matrix.
     pub fn cols(&self) -> usize {
         self.0[0].len()
     }
 
+    /// Returns a transposed matrix of the original matrix.
     pub fn transpose(&self) -> Self {
         let mut mx: Vec<Vec<i32>> = vec![];
 
@@ -62,11 +157,13 @@ impl Matrix {
         Matrix(mx)
     }
 
-    /** Alias for Matrix::transpose. */
+    /// Alias for Matrix::transpose.
     pub fn tp(&self) -> Self {
         self.transpose()
     }
 
+    /// Performs the matrix dot product operation.
+    /// Same as the * operator.
     pub fn dot_prod(m1: Self, m2: Self) -> Self {
         if m1.cols() != m2.rows() {
             panic!("Number of columns in m1 and number of rows in m2 differs.");
@@ -133,6 +230,8 @@ impl ops::Sub for Matrix {
 impl ops::Mul for Matrix {
     type Output = Matrix;
 
+    /// Performs the matrix dot product operation.
+    /// Same as `dot_prod()`.
     fn mul(self, _rhs: Self) -> Self {
         Matrix::dot_prod(self,  _rhs)
     }

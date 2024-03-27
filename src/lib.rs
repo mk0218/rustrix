@@ -1,8 +1,14 @@
-//! Supportsc macro and basic operations for matrix.
-//! Only integer items are available currently.
-
+//! # Rustrix
+//! 
+//! Supports macro and basic operations for matrix.\
+//! Please note that safety for overflow or other edge cases is not tested.
+//! 
+//! - Matrices can now contain generic type values.
+//!   (i32 and f64 are tested.)
+//! 
 //! ## Initialization
-//! ```
+//! 
+//! ```rust
 //! use rustrix::*;
 //! 
 //! let mx = mx![
@@ -10,41 +16,48 @@
 //!     4, 5, 6;
 //! ];
 //! ```
-//! ```
+//! 
+//! ```rust
 //! use rustrix::*;
 //! 
 //! let (rows, cols, initial_value) = (2, 3, 1);
 //! let mx = mx!(rows, cols; initial_value);
+//! 
 //! // 1 1 1
 //! // 1 1 1
 //! ```
-
+//! 
 //! ## Add
-//! ```
+//! 
+//! ```rust
 //! use rustrix::*;
 //! 
 //! let m1 = mx!(3, 3; 2);
 //! let m2 = mx!(3, 3; 3);
 //! let mx = m1 + m2;
+//! 
 //! // 5 5 5
 //! // 5 5 5
 //! // 5 5 5
 //! ```
-
+//! 
 //! ## Subtract
-//! ```
+//! 
+//! ```rust
 //! use rustrix::*;
 //! 
 //! let m1 = mx!(3, 3; 2);
 //! let m2 = mx!(3, 3; 3);
 //! let mx = m1 - m2;
+//! 
 //! // -1 -1 -1
 //! // -1 -1 -1
 //! // -1 -1 -1
 //! ```
-
+//! 
 //! ## Dot product
-//! ```
+//! 
+//! ```rust
 //! use rustrix::*;
 //! 
 //! let m1 = mx![
@@ -63,9 +76,10 @@
 //! //  6  6  6  6
 //! // 12 12 12 12
 //! ```
-
+//! 
 //! ## Transpose
-//! ```
+//! 
+//! ```rust
 //! use rustrix::*;
 //! 
 //! let mx = mx![
@@ -75,15 +89,18 @@
 //! ];
 //! 
 //! let tp = mx.tp();
+//! 
 //! // 1 3 5
 //! // 2 4 6
 //! ```
 
-use std::ops;
+use std::ops::{self, Add, AddAssign, Mul, Sub, SubAssign};
 
 // TODO: How to ensure the vector is not empty?
 #[derive(Clone, Debug, PartialEq)]
-pub struct Matrix(pub Vec<Vec<i32>>);
+pub struct Matrix<T>(pub Vec<Vec<T>>)
+where
+    T: Clone + Copy + Add + Sub + Mul<Output = T> + AddAssign + SubAssign + From<i32>;
 
 /// ```
 /// use rustrix::*;
@@ -98,18 +115,14 @@ pub struct Matrix(pub Vec<Vec<i32>>);
 /// ```
 #[macro_export]
 macro_rules! mx {
-    ($r: expr, $c: expr $(; $v: expr)?) => {
+    ($r: expr, $c: expr ; $v: expr) => {
         {
-            let mut v = 0;
-
-            $( v = $v; )?
-            
-            let mut mx: Vec<Vec<i32>> = vec![];
+            let mut mx: Vec<Vec<_>> = vec![];
             for r in 0..$r {
                 mx.push(vec![]);
                 
                 for _ in 0..$c {
-                    mx[r].push(v);
+                    mx[r].push($v);
                 }
             }
 
@@ -118,9 +131,9 @@ macro_rules! mx {
     };
     [$($($v: expr),+);+$(;)?] => {
         {
-            let mut mx: Vec<Vec<i32>> = vec![];
+            let mut mx: Vec<Vec<_>> = vec![];
             $(
-                let mut row: Vec<i32> = vec![];
+                let mut row: Vec<_> = vec![];
                 $(
                     row.push($v);
                 )+
@@ -132,7 +145,10 @@ macro_rules! mx {
     };
 }
 
-impl Matrix {
+impl<T> Matrix<T>
+where
+    T: Clone + Copy + Add + Sub + Mul<Output = T> + AddAssign + SubAssign + From<i32>,
+{
     /// Returns the number of rows in the matrix.
     pub fn rows(&self) -> usize {
         self.0.len()
@@ -143,9 +159,19 @@ impl Matrix {
         self.0[0].len()
     }
 
+    /// Returns the value at given row, column.
+    pub fn get(&self, row: usize, col: usize) -> T {
+        self.0[row][col]
+    }
+
+    /// Sets the value at given row, column.
+    pub fn set(&mut self, row: usize, col: usize, value: T) {
+        self.0[row][col] = value;
+    }
+
     /// Returns a transposed matrix of the original matrix.
     pub fn transpose(&self) -> Self {
-        let mut mx: Vec<Vec<i32>> = vec![];
+        let mut mx: Vec<Vec<T>> = vec![];
 
         for c in 0..self.cols() {
             mx.push(vec![]);
@@ -173,7 +199,7 @@ impl Matrix {
         let cols = m2.cols();
         let terms = m1.cols();
 
-        let mut mx = mx!(rows, cols; 0);
+        let mut mx: Matrix<T> = mx!(rows, cols; 0.into());
 
         for r in 0..rows {
             for c in 0..cols {
@@ -187,8 +213,11 @@ impl Matrix {
     }
 }
 
-impl ops::Add for Matrix {
-    type Output = Matrix;
+impl<T> ops::Add for Matrix<T>
+where
+    T: Clone + Copy + Add + Sub + Mul<Output = T> + AddAssign + SubAssign + From<i32>,
+{
+    type Output = Matrix<T>;
 
     fn add(self, _rhs: Self) -> Self {
         if self.rows() != _rhs.rows() || self.cols() != _rhs.cols() {
@@ -207,8 +236,11 @@ impl ops::Add for Matrix {
     }
 }
 
-impl ops::Sub for Matrix {
-    type Output = Matrix;
+impl<T> ops::Sub for Matrix<T>
+where
+    T: Clone + Copy + Add + Sub + Mul<Output = T> + AddAssign + SubAssign + From<i32>,
+{
+    type Output = Matrix<T>;
 
     fn sub(self, _rhs: Self) -> Self {
         if self.rows() != _rhs.rows() || self.cols() != _rhs.cols() {
@@ -227,8 +259,11 @@ impl ops::Sub for Matrix {
     }
 }
 
-impl ops::Mul for Matrix {
-    type Output = Matrix;
+impl<T> ops::Mul for Matrix<T>
+where
+    T: Clone + Copy + Add + Sub + Mul<Output = T> + AddAssign + SubAssign + From<i32>,
+{
+    type Output = Matrix<T>;
 
     /// Performs the matrix dot product operation.
     /// Same as `dot_prod()`.
@@ -247,6 +282,13 @@ mod test_matrix {
         let mx = mx!(2, 3; 1);
 
         assert_eq!(mx, Matrix(vec![vec![1, 1, 1], vec![1, 1, 1]]));
+    }
+
+    #[test]
+    fn test_macro_1_2() {
+        let mut mx = mx!(2, 3; 0);
+        mx.0[0][0] = 1;
+        assert_ne!(mx.0[0][0], mx.0[0][1]);
     }
 
     #[test]
@@ -276,7 +318,7 @@ mod test_matrix {
     }
 
     #[test]
-    fn test_add() {
+    fn test_add_i32() {
         let m1 = mx![
             1, 1;
             1, 1;
@@ -290,6 +332,26 @@ mod test_matrix {
         let m3 = mx![
             2, 3;
             4, 5;
+        ];
+
+        assert_eq!(m1 + m2, m3);
+    }
+
+    #[test]
+    fn test_add_f64() {
+        let m1 = mx![
+            1.0, 1.0;
+            1.0, 1.0;
+        ];
+
+        let m2 = mx![
+            1.0, 2.0;
+            3.0, 4.0;
+        ];
+
+        let m3 = mx![
+            2.0, 3.0;
+            4.0, 5.0;
         ];
 
         assert_eq!(m1 + m2, m3);
@@ -313,7 +375,7 @@ mod test_matrix {
     }
 
     #[test]
-    fn test_dot_prod() {
+    fn test_dot_prod_i32() {
         let m1 = mx![
             1, 1, 1;
             1, 1, 1;
@@ -328,6 +390,27 @@ mod test_matrix {
         let mx = mx![
             6, 6, 6;
             6, 6, 6;
+        ];
+
+        assert_eq!(m1 * m2, mx);
+    }
+
+    #[test]
+    fn test_dot_prod_f64() {
+        let m1 = mx![
+            1.0, 1.0, 1.0;
+            1.0, 1.0, 1.0;
+        ];
+
+        let m2 = mx![
+            2.0, 2.0, 2.0;
+            2.0, 2.0, 2.0;
+            2.0, 2.0, 2.0;
+        ];
+
+        let mx = mx![
+            6.0, 6.0, 6.0;
+            6.0, 6.0, 6.0;
         ];
 
         assert_eq!(m1 * m2, mx);

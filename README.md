@@ -1,13 +1,25 @@
-Only integer items are available currently.
+# Rustrix
+
+Supports macro and basic operations for matrix.\
+Please note that safety for overflow or other edge cases is not tested.
+
+- Matrices can now contain generic type values.
+  (i32 and f64 are tested.)
 
 ## Initialization
-```Rust
+
+```rust
+use rustrix::*;
+
 let mx = mx![
     1, 2, 3;
     4, 5, 6;
 ];
 ```
-```Rust
+
+```rust
+use rustrix::*;
+
 let (rows, cols, initial_value) = (2, 3, 1);
 let mx = mx!(rows, cols; initial_value);
 
@@ -16,7 +28,10 @@ let mx = mx!(rows, cols; initial_value);
 ```
 
 ## Add
-```Rust
+
+```rust
+use rustrix::*;
+
 let m1 = mx!(3, 3; 2);
 let m2 = mx!(3, 3; 3);
 let mx = m1 + m2;
@@ -27,7 +42,10 @@ let mx = m1 + m2;
 ```
 
 ## Subtract
-```Rust
+
+```rust
+use rustrix::*;
+
 let m1 = mx!(3, 3; 2);
 let m2 = mx!(3, 3; 3);
 let mx = m1 - m2;
@@ -38,7 +56,10 @@ let mx = m1 - m2;
 ```
 
 ## Dot product
-```Rust
+
+```rust
+use rustrix::*;
+
 let m1 = mx![
     1, 1, 1;
     2, 2, 2;
@@ -57,7 +78,10 @@ let mx = m1 * m2;
 ```
 
 ## Transpose
-```Rust
+
+```rust
+use rustrix::*;
+
 let mx = mx![
     1, 2;
     3, 4;

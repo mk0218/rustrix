@@ -11,20 +11,19 @@ Please note that safety for overflow or other edge cases is not tested.
 ```rust
 use rustrix::*;
 
-let mx = mx![
+let m = mx![
     1, 2, 3;
     4, 5, 6;
 ];
-```
 
-```rust
-use rustrix::*;
+let (rows, cols, init) = (2, 3, 1);
+let m1 = mx!(rows, cols; init);
+let m2 = mx![
+    1, 1, 1;
+    1, 1, 1;
+];
 
-let (rows, cols, initial_value) = (2, 3, 1);
-let mx = mx!(rows, cols; initial_value);
-
-// 1 1 1
-// 1 1 1
+assert_eq!(m1, m2)
 ```
 
 ## Add
@@ -32,13 +31,7 @@ let mx = mx!(rows, cols; initial_value);
 ```rust
 use rustrix::*;
 
-let m1 = mx!(3, 3; 2);
-let m2 = mx!(3, 3; 3);
-let mx = m1 + m2;
-
-// 5 5 5
-// 5 5 5
-// 5 5 5
+let m = mx!(2, 3; 2) + mx!(2, 3; 3);
 ```
 
 ## Subtract
@@ -46,13 +39,7 @@ let mx = m1 + m2;
 ```rust
 use rustrix::*;
 
-let m1 = mx!(3, 3; 2);
-let m2 = mx!(3, 3; 3);
-let mx = m1 - m2;
-
-// -1 -1 -1
-// -1 -1 -1
-// -1 -1 -1
+let m = mx!(2, 3; 4) - mx!(2, 3; 1);
 ```
 
 ## Dot product
@@ -61,20 +48,16 @@ let mx = m1 - m2;
 use rustrix::*;
 
 let m1 = mx![
-    1, 1, 1;
-    2, 2, 2;
+    1, 1;
+    2, 2;
 ];
 
 let m2 = mx![
     1, 1, 1, 1;
     2, 2, 2, 2;
-    3, 3, 3, 3;
 ];
 
-let mx = m1 * m2;
-
-//  6  6  6  6
-// 12 12 12 12
+let m = m1 * m2;
 ```
 
 ## Transpose
@@ -82,14 +65,12 @@ let mx = m1 * m2;
 ```rust
 use rustrix::*;
 
-let mx = mx![
+let m1 = mx![
     1, 2;
     3, 4;
     5, 6;
 ];
 
-let tp = mx.tp();
-
-// 1 3 5
-// 2 4 6
+let m2 = m1.tp();
+let m3 = m1.transpose();
 ```

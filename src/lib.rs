@@ -1,10 +1,4 @@
-//! # Rustrix
-//! 
-//! Supports macro and basic operations for matrix.\
-//! Please note that safety for overflow or other edge cases is not tested.
-//! 
-//! - Matrices can now contain generic type values.
-//!   (i32 and f64 are tested.)
+//! Supports macro and basic operations for matrix.
 //! 
 //! ## Initialization
 //! 

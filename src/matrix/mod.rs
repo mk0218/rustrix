@@ -177,7 +177,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dot_prod_i32() {
+    fn test_mul_i32() {
         let m1 = mx![
             1, 1, 1;
             1, 1, 1;
@@ -198,7 +198,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dot_prod_f64() {
+    fn test_mul_f64() {
         let m1 = mx![
             1.0, 1.0, 1.0;
             1.0, 1.0, 1.0;
@@ -216,5 +216,20 @@ mod tests {
         ];
 
         assert_eq!(m1 * m2, mx);
+    }
+
+    #[test]
+    fn test_mul_scalar() {
+        let m1 = mx![
+            1, 2, 3;
+            4, 5, 6;
+        ];
+
+        let m2 = mx![
+            -1, -2, -3;
+            -4, -5, -6;
+        ];
+
+        assert_eq!(m1.mul_scalar(-1), m2);
     }
 }

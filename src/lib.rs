@@ -68,6 +68,19 @@
 //! let m2 = m1.tp();
 //! let m3 = m1.transpose();
 //! ```
+//! 
+//! ## Scalar multiplication
+//! 
+//! ```rust
+//! use rustrix::*;
+//! 
+//! let m1 = mx![
+//!     1, 2, 3;
+//!     4, 5, 6;
+//! ];
+//! 
+//! let m2 = m1.mul_scalar(2);
+//! ```
 
 mod matrix;
 pub use matrix::Matrix;

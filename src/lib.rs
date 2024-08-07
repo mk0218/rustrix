@@ -94,13 +94,22 @@
 //! // 2 4 6
 //! ```
 
-use std::ops::{self, Add, AddAssign, Mul, Sub, SubAssign};
+use std::{
+    iter::Zip,
+    ops::{self, Add, AddAssign, Mul, Sub, SubAssign},
+    slice::Iter,
+};
+
+type Vec2D<T> = Vec<Vec<T>>;
 
 // TODO: How to ensure the vector is not empty?
 #[derive(Clone, Debug, PartialEq)]
-pub struct Matrix<T>(pub Vec<Vec<T>>)
+pub struct Matrix<T>(pub Vec2D<T>)
 where
-    T: Clone + Copy + Add + Sub + Mul<Output = T> + AddAssign + SubAssign + From<i32>;
+    T: Clone + Copy
+        + Add<Output = T> + Sub<Output = T> + Mul<Output = T>
+        + AddAssign + SubAssign
+        + From<i32>;
 
 /// ```
 /// use rustrix::*;
@@ -115,39 +124,33 @@ where
 /// ```
 #[macro_export]
 macro_rules! mx {
-    ($r: expr, $c: expr ; $v: expr) => {
-        {
-            let mut mx: Vec<Vec<_>> = vec![];
-            for r in 0..$r {
-                mx.push(vec![]);
-                
-                for _ in 0..$c {
-                    mx[r].push($v);
-                }
-            }
-
-            Matrix(mx)
-        }
+    ($r: expr, $c: expr$(; $v: expr)?) => {
+        Matrix::from(vec![vec![0$(+$v)?; $c]; $r])
     };
     [$($($v: expr),+);+$(;)?] => {
-        {
-            let mut mx: Vec<Vec<_>> = vec![];
-            $(
-                let mut row: Vec<_> = vec![];
-                $(
-                    row.push($v);
-                )+
-                mx.push(row);
-            )+
-
-            Matrix(mx)
-        }
+        Matrix::from(vec![$(vec![$($v,)+]),+])
     };
+}
+
+
+impl<T> From<Vec2D<T>> for Matrix<T>
+where
+    T: Clone + Copy
+        + Add<Output = T> + Sub<Output = T> + Mul<Output = T>
+        + AddAssign + SubAssign
+        + From<i32>,
+{
+    fn from(v: Vec2D<T>) -> Self {
+        Matrix(v)
+    }
 }
 
 impl<T> Matrix<T>
 where
-    T: Clone + Copy + Add + Sub + Mul<Output = T> + AddAssign + SubAssign + From<i32>,
+    T: Clone + Copy
+        + Add<Output = T> + Sub<Output = T> + Mul<Output = T>
+        + AddAssign + SubAssign
+        + From<i32>,
 {
     /// Returns the number of rows in the matrix.
     pub fn rows(&self) -> usize {
@@ -171,16 +174,11 @@ where
 
     /// Returns a transposed matrix of the original matrix.
     pub fn transpose(&self) -> Self {
-        let mut mx: Vec<Vec<T>> = vec![];
-
-        for c in 0..self.cols() {
-            mx.push(vec![]);
-            for r in 0..self.rows() {
-                mx[c].push(self.0[r][c]);
-            }
-        }
-
-        Matrix(mx)
+        (0..self.cols()).map(|j| {
+            (0..self.rows()).map(|i| {
+                self.0[i][j]
+            }).collect::<Vec<_>>()
+        }).collect::<Vec<_>>().into()
     }
 
     /// Alias for Matrix::transpose.
@@ -188,87 +186,89 @@ where
         self.transpose()
     }
 
+    
+    #[deprecated(since="0.2.0", note="Please use '*' operator instead.")]
     /// Performs the matrix dot product operation.
-    /// Same as the * operator.
     pub fn dot_prod(m1: Self, m2: Self) -> Self {
-        if m1.cols() != m2.rows() {
-            panic!("Number of columns in m1 and number of rows in m2 differs.");
-        }
-
-        let rows = m1.rows();
-        let cols = m2.cols();
-        let terms = m1.cols();
-
-        let mut mx: Matrix<T> = mx!(rows, cols; 0.into());
-
-        for r in 0..rows {
-            for c in 0..cols {
-                for t in 0..terms {
-                    mx.0[r][c] += m1.0[r][t] * m2.0[t][c];
-                }
-            }
-        }
-
-        mx
+        m1 * m2
     }
+}
+
+fn zip<'a, T>(v1: &'a Vec<T>, v2: &'a Vec<T>) -> Zip<Iter<'a, T>, Iter<'a, T>> {
+    Iterator::zip(v1.iter(), v2.iter())
 }
 
 impl<T> ops::Add for Matrix<T>
 where
-    T: Clone + Copy + Add + Sub + Mul<Output = T> + AddAssign + SubAssign + From<i32>,
+    T: Clone + Copy
+        + Add<Output = T> + Sub<Output = T> + Mul<Output = T>
+        + AddAssign + SubAssign
+        + From<i32>,
 {
     type Output = Matrix<T>;
 
-    fn add(self, _rhs: Self) -> Self {
-        if self.rows() != _rhs.rows() || self.cols() != _rhs.cols() {
+    fn add(self, rhs: Self) -> Self {
+        if self.rows() != rhs.rows() || self.cols() != rhs.cols() {
             panic!("Cannot add matrices with different sizes.");
         }
 
-        let mut output = self.clone();
+        zip(&self.0, &rhs.0).map(|(r1, r2)| {
+            zip(r1, r2).map(|(&v1, &v2)| {
+                v1 + v2
+            }).collect::<Vec<_>>()
+        }).collect::<Vec<_>>().into()
 
-        for r in 0..output.rows() {
-            for c in 0..output.cols() {
-                output.0[r][c] += _rhs.0[r][c];
-            }
-        }
-        
-        output
     }
 }
 
 impl<T> ops::Sub for Matrix<T>
 where
-    T: Clone + Copy + Add + Sub + Mul<Output = T> + AddAssign + SubAssign + From<i32>,
+    T: Clone + Copy
+        + Add<Output = T> + Sub<Output = T> + Mul<Output = T>
+        + AddAssign + SubAssign
+        + From<i32>,
 {
     type Output = Matrix<T>;
 
-    fn sub(self, _rhs: Self) -> Self {
-        if self.rows() != _rhs.rows() || self.cols() != _rhs.cols() {
+    fn sub(self, rhs: Self) -> Self {
+        if self.rows() != rhs.rows() || self.cols() != rhs.cols() {
             panic!("Cannot subtract matrices with different sizes.");
         }
 
-        let mut output = self.clone();
-
-        for r in 0..output.rows() {
-            for c in 0..output.cols() {
-                output.0[r][c] -= _rhs.0[r][c];
-            }
-        }
-        
-        output
+        zip(&self.0, &rhs.0).map(|(r1, r2)| {
+            zip(r1, r2).map(|(&v1, &v2)| {
+                v1 - v2
+            }).collect::<Vec<_>>()
+        }).collect::<Vec<_>>().into()
     }
 }
 
 impl<T> ops::Mul for Matrix<T>
 where
-    T: Clone + Copy + Add + Sub + Mul<Output = T> + AddAssign + SubAssign + From<i32>,
+    T: Clone + Copy
+        + Add<Output = T> + Sub<Output = T> + Mul<Output = T>
+        + AddAssign + SubAssign
+        + From<i32>,
 {
     type Output = Matrix<T>;
 
     /// Performs the matrix dot product operation.
-    /// Same as `dot_prod()`.
-    fn mul(self, _rhs: Self) -> Self {
-        Matrix::dot_prod(self,  _rhs)
+    fn mul(self, rhs: Self) -> Self {
+        if self.cols() != rhs.rows() {
+            panic!("Number of columns in lhs and number of rows in rhs differs.");
+        }
+
+        let rows = self.rows();
+        let cols = rhs.cols();
+        let terms = self.cols();
+
+        (0..rows).map(|r| {
+            (0..cols).map(|c| {
+                (0..terms).fold(0.into(), |acc, t| {
+                    acc + self.0[r][t] * rhs.0[t][c]
+                })
+            }).collect::<Vec<_>>()
+        }).collect::<Vec<_>>().into()
     }
 }
 
